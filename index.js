@@ -20,7 +20,10 @@ function startServer() {
             `/feeds/${device.location}/${device.device_id}/status`
           );
           const res2 = await mqttclient.subscribe(
-            `/feeds/${device.location}/${device.device_id}/temp`
+            `/feeds/${device.location}/${device.device_id}/ctemp`
+          );
+          const res3 = await mqttclient.subscribe(
+            `/feeds/${device.location}/${device.device_id}/human`
           );
           console.log(res1.topic);
           console.log(res2.topic);
@@ -37,7 +40,7 @@ mqttclient.on("message", (topic, msg) => {
   const pathvalues = topic.split("/");
   msg = msg.toString();
   console.log(typeof msg);
-  if (pathvalues[4] === "temp") {
+  if (pathvalues[4] === "ctemp") {
     fetch({
       query: `mutation ChangeTemp($device_id: String!, $temp: Int!){
           changeTemp(device_id:$device_id, temp:$temp)
@@ -46,7 +49,7 @@ mqttclient.on("message", (topic, msg) => {
     }).then(res => {
       console.log(res.data);
     });
-  } else {
+  } else if (pathvalues[4] === "status") {
     fetch({
       query: `mutation Statusmutation($device_id: String!, $value: Boolean!) {
     changepower(device_id: $device_id, value: $value) 
@@ -55,6 +58,16 @@ mqttclient.on("message", (topic, msg) => {
         device_id: pathvalues[3],
         value: msg === "true"
       }
+    });
+  } else if (pathvalues[4] === "human") {
+    console.log("human = " + typeof msg);
+    fetch({
+      query: `mutation ChangeHumanValue($device_id: String!, $value: Boolean!){
+        humanpresence(device_id: $device_id, value: $value)
+    }`,
+      variables: { device_id: pathvalues[3], value: msg === "1" }
+    }).then(res => {
+      console.log(res);
     });
   }
   console.log(`message ${msg}`);
