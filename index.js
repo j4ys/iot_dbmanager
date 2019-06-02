@@ -4,7 +4,7 @@ import mqtt from "mqtt";
 const fetch = createApolloFetch({
   uri: "http://localhost:4000/graphql"
 });
-const mqttclient = mqtt.connect("mqtt://192.168.1.2", {
+const mqttclient = mqtt.connect("mqtt://192.168.31.188", {
   clientId: "dbmanager"
 });
 function startServer() {
