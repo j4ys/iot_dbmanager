@@ -23,7 +23,10 @@ function startServer() {
             `/feeds/${device.location}/${device.device_id}/ctemp`
           );
           const res3 = await mqttclient.subscribe(
-            `/feeds/${device.location}/${device.device_id}/human`
+            `/feeds/${device.location}/${device.device_id}/human` // /feeds/*/*/ctemp
+          );
+          const res4 = await mqttclient.subscribe(
+            `/feeds/${device.location}/${device.device_id}/temp` // /feeds/*/*/ctemp
           );
           console.log(res1.topic);
           console.log(res2.topic);
@@ -68,6 +71,22 @@ mqttclient.on("message", (topic, msg) => {
       variables: { device_id: pathvalues[3], value: msg === "1" }
     }).then(res => {
       console.log(res);
+    });
+  } else if (pathvalues[4] === "status") {
+    fetch({
+      query: `mutation Swtitch($device_id: String!){
+        changestatus(device_id:$device_id){
+          name,
+          device_id,
+          location
+        }
+      }`,
+      variables: { device_id: pathvalues[3] }
+    }).then(res => {
+      if (!res.data) {
+        return false;
+      }
+      return true;
     });
   }
   console.log(`message ${msg}`);
