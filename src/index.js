@@ -1,3 +1,4 @@
+import "babel-polyfill";
 import { createApolloFetch } from "apollo-fetch";
 import mqtt from "mqtt";
 
@@ -16,35 +17,37 @@ function startServer() {
   }
   fetch({
     query: "{ devices { location, device_id }}"
-  }).then(res => {
-    console.log(res.data.devices);
-    if (res.data) {
-      const devices = res.data.devices;
-      devices.map(async device => {
-        try {
-          const res1 = await mqttclient.subscribe(
-            `/feeds/${device.location}/${device.device_id}/status`
-          );
-          const res2 = await mqttclient.subscribe(
-            `/feeds/${device.location}/${device.device_id}/ctemp`
-          );
-          const res3 = await mqttclient.subscribe(
-            `/feeds/${device.location}/${device.device_id}/human` // /feeds/*/*/ctemp
-          );
-          const res4 = await mqttclient.subscribe(
-            `/feeds/${device.location}/${device.device_id}/temp` // /feeds/*/*/ctemp
-          );
-          const res5 = await mqttclient.subscribe(
-            `/feeds/all/temp` // /feeds/*/*/ctemp
-          );
-          console.log(res1.topic);
-          console.log(res2.topic);
-        } catch (err) {
-          console.log(err);
-        }
-      });
-    }
-  });
+  })
+    .then(res => {
+      console.log(res.data.devices);
+      if (res.data) {
+        const devices = res.data.devices;
+        devices.map(async device => {
+          try {
+            const res1 = await mqttclient.subscribe(
+              `/feeds/${device.location}/${device.device_id}/status`
+            );
+            const res2 = await mqttclient.subscribe(
+              `/feeds/${device.location}/${device.device_id}/ctemp`
+            );
+            const res3 = await mqttclient.subscribe(
+              `/feeds/${device.location}/${device.device_id}/human` // /feeds/*/*/ctemp
+            );
+            const res4 = await mqttclient.subscribe(
+              `/feeds/${device.location}/${device.device_id}/temp` // /feeds/*/*/ctemp
+            );
+            const res5 = await mqttclient.subscribe(
+              `/feeds/all/temp` // /feeds/*/*/ctemp
+            );
+            console.log(res1.topic);
+            console.log(res2.topic);
+          } catch (err) {
+            console.log(err);
+          }
+        });
+      }
+    })
+    .catch(err => console.log(err));
 }
 
 mqttclient.on("message", (topic, msg) => {
