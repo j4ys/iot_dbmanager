@@ -1,13 +1,19 @@
 import { createApolloFetch } from "apollo-fetch";
 import mqtt from "mqtt";
 
-const fetch = createApolloFetch({
-  uri: "http://localhost:4000/graphql"
-});
-const mqttclient = mqtt.connect("mqtt://192.168.31.188", {
+const mqttclient = mqtt.connect("mqtt://192.168.1.2", {
   clientId: "dbmanager"
 });
 function startServer() {
+  let fetch;
+  try {
+    fetch = createApolloFetch({
+      uri: "http://localhost:4000/graphql"
+    });
+  } catch (err) {
+    throw new Error("cannot connect to server");
+    console.log(err);
+  }
   fetch({
     query: "{ devices { location, device_id }}"
   }).then(res => {
@@ -28,6 +34,9 @@ function startServer() {
           const res4 = await mqttclient.subscribe(
             `/feeds/${device.location}/${device.device_id}/temp` // /feeds/*/*/ctemp
           );
+          const res5 = await mqttclient.subscribe(
+            `/feeds/all/temp` // /feeds/*/*/ctemp
+          );
           console.log(res1.topic);
           console.log(res2.topic);
         } catch (err) {
@@ -41,6 +50,7 @@ function startServer() {
 mqttclient.on("message", (topic, msg) => {
   console.log(`Topic ${topic}`);
   const pathvalues = topic.split("/");
+  console.log(pathvalues);
   msg = msg.toString();
   console.log(typeof msg);
   if (pathvalues[4] === "ctemp") {
@@ -51,16 +61,6 @@ mqttclient.on("message", (topic, msg) => {
       variables: { device_id: pathvalues[3], temp: Number(msg) }
     }).then(res => {
       console.log(res.data);
-    });
-  } else if (pathvalues[4] === "status") {
-    fetch({
-      query: `mutation Statusmutation($device_id: String!, $value: Boolean!) {
-    changepower(device_id: $device_id, value: $value) 
-  }`,
-      variables: {
-        device_id: pathvalues[3],
-        value: msg === "true"
-      }
     });
   } else if (pathvalues[4] === "human") {
     console.log("human = " + typeof msg);
@@ -88,8 +88,37 @@ mqttclient.on("message", (topic, msg) => {
       }
       return true;
     });
+  } else if (pathvalues[4] === "temp") {
+    fetch({
+      query: `mutation Temp($device_id: String!, $temp:Int!){
+        changeTemp(device_id: $device_id, temp: $temp)
+      }`,
+      variables: { device_id: pathvalues[3], temp: Number(msg) }
+    }).then(res => {
+      console.log(res);
+      if (!res.data) {
+        return false;
+      }
+      return true;
+    });
+  } else if (pathvalues[3] === "temp" && pathvalues[2] === "all") {
+    fetch({
+      query: `mutation syncalldevice($temp: Int!){
+        changeAllTemp(temp:$temp)
+      }`,
+      variables: { temp: Number(msg) }
+    }).then(res => {
+      if (!res.data) {
+        return false;
+      }
+      return true;
+    });
   }
   console.log(`message ${msg}`);
 });
 
-startServer();
+try {
+  startServer();
+} catch (err) {
+  console.log(err);
+}
