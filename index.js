@@ -1,7 +1,7 @@
 import { createApolloFetch } from "apollo-fetch";
 import mqtt from "mqtt";
 
-const mqttclient = mqtt.connect("mqtt://192.168.1.2", {
+const mqttclient = mqtt.connect("mqtt://localhost", {
   clientId: "dbmanager"
 });
 let fetch;
