@@ -1,4 +1,4 @@
-import "babel-polyfill";
+import "babel-polyfill"
 import { createApolloFetch } from "apollo-fetch";
 import mqtt from "mqtt";
 
@@ -9,7 +9,7 @@ let fetch;
 function startServer() {
   try {
     fetch = createApolloFetch({
-      uri: "http://localhost:4000/graphql"
+      uri: "https://embryozim.tech/graphql"
     });
   } catch (err) {
     throw new Error("cannot connect to server");
@@ -39,6 +39,9 @@ function startServer() {
             const res5 = await mqttclient.subscribe(
               `/feeds/all/temp` // /feeds/*/*/ctemp
             );
+		  const res6 = await mqttclient.subscribe(
+              `/feeds/adddevice` // /feeds/*/*/ctemp
+            );
             console.log(res1.topic);
             console.log(res2.topic);
           } catch (err) {
@@ -59,7 +62,7 @@ mqttclient.on("message", (topic, msg) => {
   if (pathvalues[4] === "ctemp") {
     fetch({
       query: `mutation ChangeTemp($device_id: String!, $temp: Int!){
-          changeTemp(device_id:$device_id, temp:$temp)
+          changeCTemp(device_id:$device_id, temp:$temp)
       }`,
       variables: { device_id: pathvalues[3], temp: Number(msg) }
     }).then(res => {
@@ -116,6 +119,39 @@ mqttclient.on("message", (topic, msg) => {
       }
       return true;
     });
+  } else if(pathvalues[1] === "feeds" && pathvalues[2] === "adddevice"){
+   fetch({ 
+	   query: `query fetchDevice($device_id: String!) 
+	   { device(device_id:$device_id )
+		   { 
+    			location
+			device_id
+   		    }
+	   }`,
+	   variables: {device_id: msg }
+   }).then(async res => { if(!res || !res.data) {  
+	   return false; 
+   } else {
+   console.log(res.data.device.location);
+	   const {device_id , location } = res.data.device;
+const res1 = await mqttclient.subscribe(
+              `/feeds/${location}/${device_id}/status`
+            );
+            const res2 = await mqttclient.subscribe(
+              `/feeds/${location}/${device_id}/ctemp`
+            );
+            const res3 = await mqttclient.subscribe(
+              `/feeds/${location}/${device_id}/human` // /feeds/*/*/ctemp
+            );
+            const res4 = await mqttclient.subscribe(
+              `/feeds/${location}/${device_id}/temp` // /feeds/*/*/ctemp
+            );
+            const res5 = await mqttclient.subscribe(
+              `/feeds/all/temp` // /feeds/*/*/ctemp
+            );
+
+   }   
+   })
   }
   console.log(`message ${msg}`);
 });
