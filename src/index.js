@@ -42,6 +42,9 @@ function startServer() {
             const res6 = await mqttclient.subscribe(
               `/feeds/adddevice` // /feeds/*/*/ctemp
             );
+            const res5 = await mqttclient.subscribe(
+              `/feeds/all/status` // /feeds/*/*/ctemp
+            );
             console.log(res1.topic);
             console.log(res2.topic);
           } catch (err) {
@@ -158,9 +161,6 @@ mqttclient.on("message", (topic, msg) => {
         );
         const res4 = await mqttclient.subscribe(
           `/feeds/${location}/${device_id}/temp` // /feeds/*/*/ctemp
-        );
-        const res5 = await mqttclient.subscribe(
-          `/feeds/all/temp` // /feeds/*/*/ctemp
         );
       }
     });
