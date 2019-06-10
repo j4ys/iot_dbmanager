@@ -42,7 +42,7 @@ function startServer() {
             const res6 = await mqttclient.subscribe(
               `/feeds/adddevice` // /feeds/*/*/ctemp
             );
-            const res5 = await mqttclient.subscribe(
+            const res7 = await mqttclient.subscribe(
               `/feeds/all/status` // /feeds/*/*/ctemp
             );
             console.log(res1.topic);
