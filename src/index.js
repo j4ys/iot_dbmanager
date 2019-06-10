@@ -1,4 +1,4 @@
-import "babel-polyfill"
+import "babel-polyfill";
 import { createApolloFetch } from "apollo-fetch";
 import mqtt from "mqtt";
 
@@ -39,7 +39,7 @@ function startServer() {
             const res5 = await mqttclient.subscribe(
               `/feeds/all/temp` // /feeds/*/*/ctemp
             );
-		  const res6 = await mqttclient.subscribe(
+            const res6 = await mqttclient.subscribe(
               `/feeds/adddevice` // /feeds/*/*/ctemp
             );
             console.log(res1.topic);
@@ -119,39 +119,51 @@ mqttclient.on("message", (topic, msg) => {
       }
       return true;
     });
-  } else if(pathvalues[1] === "feeds" && pathvalues[2] === "adddevice"){
-   fetch({ 
-	   query: `query fetchDevice($device_id: String!) 
+  } else if (pathvalues[3] === "status" && pathvalues[2] === "all") {
+    fetch({
+      query: `mutation syncalldeviceStatus($status: Boolean!){
+        changeAllStatus(status:$status)
+      }`,
+      variables: { status: msg === "true" }
+    }).then(res => {
+      if (!res.data || !res) {
+        return false;
+      }
+      return true;
+    });
+  } else if (pathvalues[1] === "feeds" && pathvalues[2] === "adddevice") {
+    fetch({
+      query: `query fetchDevice($device_id: String!) 
 	   { device(device_id:$device_id )
 		   { 
     			location
 			device_id
    		    }
 	   }`,
-	   variables: {device_id: msg }
-   }).then(async res => { if(!res || !res.data) {  
-	   return false; 
-   } else {
-   console.log(res.data.device.location);
-	   const {device_id , location } = res.data.device;
-const res1 = await mqttclient.subscribe(
-              `/feeds/${location}/${device_id}/status`
-            );
-            const res2 = await mqttclient.subscribe(
-              `/feeds/${location}/${device_id}/ctemp`
-            );
-            const res3 = await mqttclient.subscribe(
-              `/feeds/${location}/${device_id}/human` // /feeds/*/*/ctemp
-            );
-            const res4 = await mqttclient.subscribe(
-              `/feeds/${location}/${device_id}/temp` // /feeds/*/*/ctemp
-            );
-            const res5 = await mqttclient.subscribe(
-              `/feeds/all/temp` // /feeds/*/*/ctemp
-            );
-
-   }   
-   })
+      variables: { device_id: msg }
+    }).then(async res => {
+      if (!res || !res.data) {
+        return false;
+      } else {
+        console.log(res.data.device.location);
+        const { device_id, location } = res.data.device;
+        const res1 = await mqttclient.subscribe(
+          `/feeds/${location}/${device_id}/status`
+        );
+        const res2 = await mqttclient.subscribe(
+          `/feeds/${location}/${device_id}/ctemp`
+        );
+        const res3 = await mqttclient.subscribe(
+          `/feeds/${location}/${device_id}/human` // /feeds/*/*/ctemp
+        );
+        const res4 = await mqttclient.subscribe(
+          `/feeds/${location}/${device_id}/temp` // /feeds/*/*/ctemp
+        );
+        const res5 = await mqttclient.subscribe(
+          `/feeds/all/temp` // /feeds/*/*/ctemp
+        );
+      }
+    });
   }
   console.log(`message ${msg}`);
 });
