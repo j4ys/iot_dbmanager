@@ -6,19 +6,21 @@ const mqttclient = mqtt.connect("mqtt://localhost", {
   clientId: "dbmanager"
 });
 let fetch;
+let interval;
 function startServer() {
   try {
     fetch = createApolloFetch({
-      uri: "https://embryozim.tech/graphql"
+	    uri: "http://localhost:4000/graphql"
     });
   } catch (err) {
     throw new Error("cannot connect to server");
-    console.log(err);
+    console.log("connecting to gql server failed");
   }
   fetch({
     query: "{ devices { location, device_id }}"
   })
     .then(res => {
+	clearInterval(interval)
       console.log(res.data.devices);
       if (res.data) {
         const devices = res.data.devices;
@@ -48,12 +50,13 @@ function startServer() {
             console.log(res1.topic);
             console.log(res2.topic);
           } catch (err) {
+		  throw new Error("error fetching devices");
             console.log(err);
           }
         });
       }
     })
-    .catch(err => console.log(err));
+    .catch(err => console.log("error fetching device"));
 }
 
 mqttclient.on("message", (topic, msg) => {
@@ -168,8 +171,5 @@ mqttclient.on("message", (topic, msg) => {
   console.log(`message ${msg}`);
 });
 
-try {
-  startServer();
-} catch (err) {
-  console.log(err);
-}
+	interval = setInterval(startServer, 2000);
+//startServer();
