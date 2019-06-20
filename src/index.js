@@ -149,10 +149,12 @@ mqttclient.on("message", (topic, msg) => {
       variables: { device_id: msg }
     }).then(async res => {
       if (!res || !res.data) {
+	      console.log("no device");
         return false;
       } else {
         console.log(res.data.device.location);
         const { device_id, location } = res.data.device;
+	      console.log(`added ${device_id} at location ${location}`);
         const res1 = await mqttclient.subscribe(
           `/feeds/${location}/${device_id}/status`
         );
